@@ -1,14 +1,11 @@
 import { Navigation } from "@/components/Navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
+import { DashboardCalendar } from "@/components/DashboardCalendar";
+import { ICalSync } from "@/components/ICalSync";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -58,38 +55,6 @@ export default function Dashboard() {
     setLoading(false);
   };
 
-  const updateBookingStatus = async (
-    bookingId: string,
-    status: "pending" | "confirmed" | "cancelled" | "completed"
-  ) => {
-    const { error } = await supabase
-      .from("bookings")
-      .update({ status })
-      .eq("id", bookingId);
-
-    if (error) {
-      toast.error("Erro ao atualizar status");
-    } else {
-      toast.success("Status atualizado com sucesso");
-      loadBookings();
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const variants: any = {
-      pending: "secondary",
-      confirmed: "default",
-      cancelled: "destructive",
-      completed: "outline",
-    };
-    const labels: any = {
-      pending: "Pendente",
-      confirmed: "Confirmada",
-      cancelled: "Cancelada",
-      completed: "Concluída",
-    };
-    return <Badge variant={variants[status]}>{labels[status]}</Badge>;
-  };
 
   if (!isOwner) {
     return null;
@@ -140,62 +105,9 @@ export default function Dashboard() {
             </Card>
           </div>
 
-          <Card className="glass-ocean border-primary/20">
-            <CardHeader>
-              <CardTitle>Todas as Reservas</CardTitle>
-              <CardDescription>Gerencie suas reservas</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Hóspede</TableHead>
-                    <TableHead>Check-in</TableHead>
-                    <TableHead>Check-out</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {bookings.map((booking) => (
-                    <TableRow key={booking.id}>
-                      <TableCell>{booking.guest_name}</TableCell>
-                      <TableCell>
-                        {format(new Date(booking.check_in), "dd/MM/yyyy", { locale: ptBR })}
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(booking.check_out), "dd/MM/yyyy", { locale: ptBR })}
-                      </TableCell>
-                      <TableCell>R$ {parseFloat(booking.total_price).toFixed(2)}</TableCell>
-                      <TableCell>{getStatusBadge(booking.status)}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          {booking.status === "pending" && (
-                            <Button
-                              size="sm"
-                              onClick={() => updateBookingStatus(booking.id, "confirmed")}
-                            >
-                              Confirmar
-                            </Button>
-                          )}
-                          {booking.status !== "cancelled" && (
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => updateBookingStatus(booking.id, "cancelled")}
-                            >
-                              Cancelar
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+          <DashboardCalendar bookings={bookings} onUpdate={loadBookings} />
+
+          <ICalSync />
         </div>
       </div>
     </div>
