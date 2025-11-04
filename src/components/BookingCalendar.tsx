@@ -7,9 +7,9 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { addDays, differenceInDays } from "date-fns";
+import { differenceInDays } from "date-fns";
 
-const PRICE_PER_NIGHT = 500; // R$ 500 por noite
+const PRICE_PER_NIGHT = 4500;
 
 export const BookingCalendar = () => {
   const navigate = useNavigate();
@@ -178,7 +178,8 @@ export const BookingCalendar = () => {
               <Button
                 onClick={handleBooking}
                 disabled={loading || !checkIn || !checkOut || !guestName || !guestEmail}
-                className="w-full bg-gradient-ocean"
+                className="w-full"
+                variant="ghost"
               >
                 {loading ? "Processando..." : "Confirmar Reserva"}
               </Button>

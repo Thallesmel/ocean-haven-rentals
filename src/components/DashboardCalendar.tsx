@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -153,7 +153,8 @@ export function DashboardCalendar({ bookings, onUpdate }: DashboardCalendarProps
                     const isCheckOut = format(parseISO(booking.check_out), "yyyy-MM-dd") === format(day, "yyyy-MM-dd");
 
                     return (
-                      <button
+                      <Button
+                      variant="ghost" 
                         key={booking.id}
                         onClick={() => {
                           setSelectedBooking(booking);
@@ -168,7 +169,7 @@ export function DashboardCalendar({ bookings, onUpdate }: DashboardCalendarProps
                           {booking.guest_name}
                           {isCheckOut && " ←"}
                         </div>
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>

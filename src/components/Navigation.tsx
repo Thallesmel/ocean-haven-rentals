@@ -1,8 +1,7 @@
-import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Waves, Calendar, Image, LayoutDashboard, LogOut, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
@@ -51,7 +50,7 @@ export const Navigation = () => {
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 group">
             <Waves className="h-8 w-8 text-primary animate-wave" />
-            <span className="text-2xl font-bold text-gradient">Casa da Praia</span>
+            <span className="text-2xl font-bold text-gradient">Casa Pura Vida</span>
           </Link>
 
           <div className="flex items-center gap-4">
@@ -86,11 +85,11 @@ export const Navigation = () => {
                 <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2">
                   <LogOut className="h-4 w-4" />
                   Sair
-                </Button>
+                </Button> 
               </>
             ) : (
               <Link to="/auth">
-                <Button size="sm" className="bg-gradient-ocean">
+                <Button size="sm" className="gap-2 hover:bg-green-400">
                   Entrar
                 </Button>
               </Link>

@@ -1,6 +1,6 @@
 import { Button } from "./ui/button";
 import { ChevronDown } from "lucide-react";
-import heroImage from "@/assets/beach-house-hero.jpg";
+import heroVideo from "@/assets/videos/video-casa.mp4";
 
 export const Hero = () => {
   const scrollToBooking = () => {
@@ -9,14 +9,36 @@ export const Hero = () => {
 
   return (
     <section className="relative h-screen w-full overflow-hidden">
-      {/* Background Image with Parallax Effect */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat transform scale-105 animate-float"
-        style={{ backgroundImage: `url(${heroImage})` }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-background" />
-      </div>
+      {/* Background Video */}
+      <video
+        className="absolute inset-0 w-full h-full object-cover"
+        src={heroVideo}
+        autoPlay
+        loop
+        muted
+        playsInline
+      />
 
+      {/* Overlay (escurecimento do vídeo) */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-background" />
+
+      {/* Conteúdo principal */}
+      <div className="relative z-10 flex flex-col items-center justify-center h-full text-center text-white px-4">
+        <h1 className="text-4xl md:text-6xl font-bold mb-4">
+          Sua casa de luxo em Maragogi
+        </h1>
+        <p className="text-lg md:text-2xl mb-8 max-w-2xl">
+          Experimente conforto, exclusividade e o mar mais azul do Brasil.
+        </p>
+        <Button
+          onClick={scrollToBooking}
+          className="bg-blue-600 text-white hover:bg-green-600 transition"
+        >
+          Reservar agora
+          <ChevronDown className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    
       {/* Floating Water Effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-ripple" />
@@ -34,7 +56,7 @@ export const Hero = () => {
         <Button
           onClick={scrollToBooking}
           size="lg"
-          className="bg-gradient-ocean text-white shadow-ocean hover:scale-105 transition-transform animate-fade-in animation-delay-400"
+          className="hover:scale-105 transition-transform animate-fade-in animation-delay-400 hover:bg-green-600"
         >
           Reservar Agora
         </Button>
