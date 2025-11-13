@@ -1,6 +1,7 @@
 import { Navigation } from '@/components/Navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ICalSync } from '@/components/ICalSync';
+import { ICSCalendarPreview } from '@/components/ICSCalendarPreview';
 
 export default function Dashboard() {
   return (
@@ -40,6 +41,7 @@ export default function Dashboard() {
             </Card>
           </div>
 
+          <ICSCalendarPreview />
           <ICalSync />
         </div>
       </div>

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Calendar, Trash2, RefreshCw } from "lucide-react";
+import { Calendar, Trash2, RefreshCw, Copy, Hotel, Globe } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -97,22 +97,95 @@ export function ICalSync() {
           Sincronize com Airbnb, Booking.com e outras plataformas via iCal
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Add new sync */}
-        <div className="space-y-3 p-4 rounded-lg bg-background/50">
-          <Input
-            placeholder="Plataforma (ex: Airbnb, Booking.com)"
-            value={newPlatform}
-            onChange={(e) => setNewPlatform(e.target.value)}
-          />
-          <Input
-            placeholder="URL do iCal"
-            value={newUrl}
-            onChange={(e) => setNewUrl(e.target.value)}
-          />
-          <Button onClick={addSync} className="w-full">
-            Adicionar Calendário
-          </Button>
+      <CardContent className="space-y-6">
+        <div className="grid md:grid-cols-2 gap-4">
+          <Card className="bg-background/50 border-border">
+            <CardHeader>
+              <CardTitle>Adicionar Calendário</CardTitle>
+              <CardDescription>Informe a plataforma e a URL do iCal</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Input
+                placeholder="Plataforma (ex: Airbnb, Booking.com)"
+                value={newPlatform}
+                onChange={(e) => setNewPlatform(e.target.value)}
+              />
+              <Input
+                placeholder="URL do iCal"
+                value={newUrl}
+                onChange={(e) => setNewUrl(e.target.value)}
+              />
+              <Button onClick={addSync} variant="gradient" className="w-full">
+                Adicionar à lista
+              </Button>
+            </CardContent>
+          </Card>
+
+          <div className="space-y-3">
+            <Card className="bg-background/50 border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Hotel className="h-4 w-4" /> Airbnb
+                </CardTitle>
+                <CardDescription>Exemplo de integração via iCal</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setNewPlatform("Airbnb");
+                    setNewUrl("");
+                  }}
+                  className="w-full"
+                >
+                  Usar exemplo do Airbnb
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-background/50 border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Hotel className="h-4 w-4" /> Booking.com
+                </CardTitle>
+                <CardDescription>Exemplo de integração via iCal</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setNewPlatform("Booking.com");
+                    setNewUrl("");
+                  }}
+                  className="w-full"
+                >
+                  Usar exemplo do Booking.com
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-background/50 border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="h-4 w-4" /> Nosso iCal URL
+                </CardTitle>
+                <CardDescription>Compartilhe seu calendário público</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex gap-2">
+                  <Input readOnly value={`${window.location.origin}/export.ics`} />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => navigator.clipboard.writeText(`${window.location.origin}/export.ics`)}
+                    title="Copiar URL"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Existing syncs */}
