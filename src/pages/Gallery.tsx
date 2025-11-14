@@ -8,14 +8,7 @@ const imageImports = import.meta.glob("@/assets/images/**/*.{jpg,jpeg,png,webp}"
   eager: true,
 });
 
-type RoomType =
-  | "all"
-  | "Entrance"
-  | "KitchenLaundry"
-  | "LivingRoom"
-  | "PoolBar"
-  | "Restroom"
-  | "Rooms";
+type RoomType = string;
 
 interface RoomGallery {
   name: string;
@@ -28,26 +21,48 @@ interface RoomGallery {
 const groupImagesByFolder = (): Record<string, string[]> => {
   const grouped: Record<string, string[]> = {};
   Object.keys(imageImports).forEach((path) => {
-    const match = path.match(/images\/([^/]+)\//);
-    if (match) {
-      const folder = match[1];
-      if (!grouped[folder]) grouped[folder] = [];
-      // @ts-expect-error: Vite ESM glob generates modules with a default export
-      grouped[folder].push(imageImports[path].default);
+    const topMatch = path.match(/images\/([^/]+)\//);
+    if (!topMatch) return;
+    const top = topMatch[1];
+    if (top === "Rooms") {
+      const subMatch = path.match(/images\/Rooms\/([^/]+)\//);
+      if (subMatch) {
+        const sub = subMatch[1];
+        if (!grouped[sub]) grouped[sub] = [];
+        // @ts-expect-error: Vite ESM glob generates modules with a default export
+        grouped[sub].push(imageImports[path].default);
+        return;
+      }
     }
+    if (!grouped[top]) grouped[top] = [];
+    // @ts-expect-error: Vite ESM glob generates modules with a default export
+    grouped[top].push(imageImports[path].default);
   });
   return grouped;
 };
 
 const groupedImages = groupImagesByFolder();
 
-const roomSections: RoomGallery[] = [
+const baseSections: RoomGallery[] = [
   { name: "Entrada", key: "Entrance", images: groupedImages.Entrance || [], description: "Entrada principal e áreas de acesso" },
   { name: "Cozinha e Lavanderia", key: "KitchenLaundry", images: groupedImages.KitchenLaundry || [], description: "Cozinha gourmet e lavanderia completa" },
   { name: "Sala de Estar", key: "LivingRoom", images: groupedImages.LivingRoom || [], description: "Ambiente social com vista e conforto" },
   { name: "Área da Piscina e Bar", key: "PoolBar", images: groupedImages.PoolBar || [], description: "Espaço externo com piscina e bar molhado" },
   { name: "Banheiros", key: "Restroom", images: groupedImages.Restroom || [], description: "Banheiros modernos e bem iluminados" },
-  { name: "Quartos", key: "Rooms", images: groupedImages.Rooms || [], description: "Suítes confortáveis e elegantes" },
+];
+
+const roomKeys = Object.keys(groupedImages).filter(
+  (k) => !["Entrance", "KitchenLaundry", "LivingRoom", "PoolBar", "Restroom", "Rooms"].includes(k)
+);
+
+const roomSections: RoomGallery[] = [
+  ...baseSections,
+  ...roomKeys.map((k) => ({
+    name: k,
+    key: k,
+    images: groupedImages[k] || [],
+    description: `Imagens do quarto ${k}`,
+  })),
 ];
 
 export default function Gallery() {
