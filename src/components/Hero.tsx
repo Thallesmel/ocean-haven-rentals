@@ -23,7 +23,7 @@ export const Hero = () => {
       <div className='absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-background' />
 
       {/* Conteúdo principal */}
-      <div className='relative z-10 flex flex-col items-center justify-center h-full text-center text-white px-4'>
+      <div className='relative z-10 flex flex-col items-center justify-center h-full text-center text-white px-4 gap-6 md:gap-8'>
         <h1 className='text-4xl md:text-6xl font-bold mb-4'>
           Sua casa de luxo em Maragogi
         </h1>

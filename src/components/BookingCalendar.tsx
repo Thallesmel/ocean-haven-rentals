@@ -24,59 +24,73 @@ export const BookingCalendar = () => {
   const totalNights = checkIn && checkOut ? differenceInDays(checkOut, checkIn) : 0;
   const totalPrice = totalNights * PRICE_PER_NIGHT;
 
+  type CreatedBooking = {
+    id: string;
+    status: "pending" | "confirmed" | "cancelled" | "completed";
+    check_in: string;
+    check_out: string;
+    number_of_guests: number;
+    total_price: number;
+  };
+
   const handleBooking = async () => {
     if (!checkIn || !checkOut) {
       toast.error("Selecione as datas de check-in e check-out");
       return;
     }
-
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      toast.error("Faça login para continuar com a reserva");
-      navigate("/auth");
+    if (!guestName.trim() || !guestEmail.trim()) {
+      toast.error("Preencha nome e email");
       return;
     }
+    if (!/^\S+@\S+\.\S+$/.test(guestEmail)) {
+      toast.error("Email inválido");
+      return;
+    }
+    if (numberOfGuests < 1) {
+      toast.error("Número de hóspedes inválido");
+      return;
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
 
     setLoading(true);
 
     try {
-      const { data, error } = await supabase
-        .from("bookings")
-        .insert({
-          user_id: user.id,
-          guest_name: guestName,
-          guest_email: guestEmail,
-          guest_phone: guestPhone,
-          check_in: checkIn.toISOString().split("T")[0],
-          check_out: checkOut.toISOString().split("T")[0],
-          number_of_guests: numberOfGuests,
-          total_price: totalPrice,
-          status: "pending",
-        })
-        .select()
-        .single();
+      let created: CreatedBooking | null = null;
+      if (user) {
+        const { data, error } = await supabase
+          .from("bookings")
+          .insert({
+            user_id: user.id,
+            guest_name: guestName,
+            guest_email: guestEmail,
+            guest_phone: guestPhone,
+            check_in: checkIn.toISOString().split("T")[0],
+            check_out: checkOut.toISOString().split("T")[0],
+            number_of_guests: numberOfGuests,
+            total_price: totalPrice,
+            status: "pending",
+          })
+          .select()
+          .single();
+        if (error) throw error;
+        created = data as CreatedBooking;
+      }
 
-      if (error) throw error;
+      const bookingForView = created ?? {
+        id: `temp-${Date.now()}`,
+        status: "pending",
+        check_in: checkIn.toISOString().split("T")[0],
+        check_out: checkOut.toISOString().split("T")[0],
+        number_of_guests: numberOfGuests,
+        total_price: totalPrice,
+      };
 
-      // Create Stripe payment
-      const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
-        "create-payment",
-        {
-          body: {
-            bookingId: data.id,
-            amount: totalPrice * 100, // Convert to cents
-          },
-        }
-      );
-
-      if (paymentError) throw paymentError;
-
-      // Redirect to Stripe Checkout
-      window.open(paymentData.url, "_blank");
-      toast.success("Reserva criada! Redirecionando para pagamento...");
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao criar reserva");
+      navigate("/my-booking", { state: { booking: bookingForView } });
+      toast.success("Reserva criada! Abrindo detalhes...");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Erro ao criar reserva";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -187,7 +201,6 @@ export const BookingCalendar = () => {
 
               <Button
                 onClick={handleBooking}
-                disabled={loading || !checkIn || !checkOut || !guestName || !guestEmail}
                 className="w-full"
                 variant="gradient"
               >

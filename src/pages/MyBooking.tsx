@@ -1,26 +1,39 @@
-import { Navigation } from "@/components/Navigation";
-import { useCallback, useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { useNavigate } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
-import { Send } from "lucide-react";
+import { Navigation } from '@/components/Navigation';
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from '@/components/ui/popover';
+import { Send } from 'lucide-react';
 
 export default function MyBooking() {
   const navigate = useNavigate();
+  const location = useLocation();
   type Booking = {
     id: string;
-    status: "pending" | "confirmed" | "cancelled" | "completed";
+    status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
     check_in: string;
     check_out: string;
     number_of_guests: number;
     total_price: number | string;
   };
+  type LocationState = { booking?: Booking };
   type Message = {
     id: string;
     booking_id: string;
@@ -31,20 +44,43 @@ export default function MyBooking() {
   };
   const [booking, setBooking] = useState<Booking | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState("");
+  const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
 
+  const handlePay = async () => {
+    if (!booking) return;
+    try {
+      const amountNumber =
+        typeof booking.total_price === 'string'
+          ? parseFloat(booking.total_price)
+          : booking.total_price;
+      const amountCents = Math.round(amountNumber * 100);
+      const { data, error } = await supabase.functions.invoke(
+        'create-payment',
+        {
+          body: { bookingId: booking.id, amount: amountCents },
+        }
+      );
+      if (error) throw error;
+      window.location.href = data.url;
+    } catch (error: unknown) {
+      toast.error('Falha ao iniciar pagamento');
+    }
+  };
+
   const loadBookingAndMessages = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
-      navigate("/auth");
+      setLoading(false);
       return;
     }
     const { data: bookingData } = await supabase
-      .from("bookings")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
+      .from('bookings')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
       .limit(1)
       .single();
     if (bookingData) {
@@ -52,20 +88,24 @@ export default function MyBooking() {
       loadMessages(bookingData.id);
     }
     setLoading(false);
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
+    const stateBooking = (location.state as LocationState)?.booking;
+    if (stateBooking) {
+      setBooking(stateBooking as Booking);
+      setLoading(false);
+      return;
+    }
     loadBookingAndMessages();
-  }, [loadBookingAndMessages]);
-
-  
+  }, [loadBookingAndMessages, location.state]);
 
   const loadMessages = async (bookingId: string) => {
     const { data } = await supabase
-      .from("messages")
-      .select("*")
-      .eq("booking_id", bookingId)
-      .order("created_at", { ascending: true });
+      .from('messages')
+      .select('*')
+      .eq('booking_id', bookingId)
+      .order('created_at', { ascending: true });
 
     setMessages(data || []);
   };
@@ -73,9 +113,11 @@ export default function MyBooking() {
   const sendMessage = async () => {
     if (!newMessage.trim() || !booking) return;
 
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    const { error } = await supabase.from("messages").insert({
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const { error } = await supabase.from('messages').insert({
       booking_id: booking.id,
       sender_id: user?.id,
       message: newMessage,
@@ -83,35 +125,38 @@ export default function MyBooking() {
     });
 
     if (error) {
-      toast.error("Erro ao enviar mensagem");
+      toast.error('Erro ao enviar mensagem');
     } else {
-      setNewMessage("");
+      setNewMessage('');
       loadMessages(booking.id);
-      toast.success("Mensagem enviada!");
+      toast.success('Mensagem enviada!');
     }
   };
 
-  const getStatusBadge = (status: Booking["status"]) => {
-    const variants: Record<Booking["status"], "secondary" | "default" | "destructive" | "outline"> = {
-      pending: "secondary",
-      confirmed: "default",
-      cancelled: "destructive",
-      completed: "outline",
+  const getStatusBadge = (status: Booking['status']) => {
+    const variants: Record<
+      Booking['status'],
+      'secondary' | 'default' | 'destructive' | 'outline'
+    > = {
+      pending: 'secondary',
+      confirmed: 'default',
+      cancelled: 'destructive',
+      completed: 'outline',
     };
-    const labels: Record<Booking["status"], string> = {
-      pending: "Pendente",
-      confirmed: "Confirmada",
-      cancelled: "Cancelada",
-      completed: "Concluída",
+    const labels: Record<Booking['status'], string> = {
+      pending: 'Pendente',
+      confirmed: 'Confirmada',
+      cancelled: 'Cancelada',
+      completed: 'Concluída',
     };
     return <Badge variant={variants[status]}>{labels[status]}</Badge>;
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className='min-h-screen bg-background'>
         <Navigation />
-        <div className="pt-24 flex items-center justify-center">
+        <div className='pt-24 flex items-center justify-center'>
           <p>Carregando...</p>
         </div>
       </div>
@@ -120,13 +165,19 @@ export default function MyBooking() {
 
   if (!booking) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className='min-h-screen bg-background'>
         <Navigation />
-        <div className="pt-24 pb-12 px-4">
-          <div className="container mx-auto text-center">
-            <h1 className="text-4xl font-bold mb-4">Nenhuma reserva encontrada</h1>
-            <p className="text-muted-foreground mb-8">Você ainda não tem reservas.</p>
-            <Button onClick={() => navigate("/#book")}>Fazer uma Reserva</Button>
+        <div className='pt-24 pb-12 px-4'>
+          <div className='container mx-auto text-center'>
+            <h1 className='text-4xl font-bold mb-4'>
+              Nenhuma reserva encontrada
+            </h1>
+            <p className='text-muted-foreground mb-8'>
+              Você ainda não tem reservas.
+            </p>
+            <Button onClick={() => navigate('/#book')}>
+              Fazer uma Reserva
+            </Button>
           </div>
         </div>
       </div>
@@ -134,101 +185,201 @@ export default function MyBooking() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className='min-h-screen bg-background'>
       <Navigation />
-      
-      <div className="pt-24 pb-12 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <h1 className="text-5xl font-bold mb-12 text-gradient">Minha Reserva</h1>
 
-          <Card className="glass-ocean border-primary/20 mb-8">
+      <div className='pt-24 pb-12 px-4'>
+        <div className='container mx-auto max-w-4xl'>
+          <h1 className='text-5xl font-bold mb-12 text-gradient'>
+            Minha Reserva
+          </h1>
+
+          <Card className='glass-ocean border-primary/20 mb-8'>
             <CardHeader>
-              <div className="flex justify-between items-start">
+              <div className='flex justify-between items-start'>
                 <div>
                   <CardTitle>Detalhes da Reserva</CardTitle>
-                  <CardDescription>Código: {booking.id.slice(0, 8)}</CardDescription>
+                  <CardDescription>
+                    Código: {booking.id.slice(0, 8)}
+                  </CardDescription>
                 </div>
                 {getStatusBadge(booking.status)}
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Check-in</p>
-                  <p className="font-bold">
-                    {format(new Date(booking.check_in), "dd 'de' MMMM 'de' yyyy", {
-                      locale: ptBR,
-                    })}
-                  </p>
+            <CardContent className='space-y-4'>
+              <div className='grid md:grid-cols-2 gap-6 items-stretch'>
+                <div className='md:h-full'>
+                  <div className='relative h-full min-h-[12rem] md:min-h-[16rem] rounded-lg overflow-hidden bg-muted'>
+                    <img
+                      src='https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=1200&q=60'
+                      alt='Acomodação'
+                      className='w-full h-full object-cover'
+                    />
+                  </div>
+                  <div className='mt-3'>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          className='shadow-ocean'
+                        >
+                          Mais detalhes
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className='w-64'>
+                        <div className='space-y-2 text-sm'>
+                          <p>Suíte premium com vista para o mar.</p>
+                          <p>Check-in a partir das 14h, check-out até 11h.</p>
+                          <p>Itens incluídos: roupa de cama, Wi‑Fi, limpeza.</p>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Check-out</p>
-                  <p className="font-bold">
-                    {format(new Date(booking.check_out), "dd 'de' MMMM 'de' yyyy", {
-                      locale: ptBR,
-                    })}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Hóspedes</p>
-                  <p className="font-bold">{booking.number_of_guests}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Valor Total</p>
-                  <p className="font-bold text-primary text-xl">
-                    R$ {(
-                      typeof booking.total_price === "string"
-                        ? parseFloat(booking.total_price)
-                        : booking.total_price
-                    ).toFixed(2)}
-                  </p>
+                  <div className='grid sm:grid-cols-2 gap-4'>
+                    <div>
+                      <p className='text-sm text-muted-foreground'>Check-in</p>
+                      <p className='font-bold'>
+                        {format(
+                          new Date(booking.check_in),
+                          "dd 'de' MMMM 'de' yyyy",
+                          {
+                            locale: ptBR,
+                          }
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className='text-sm text-muted-foreground'>Check-out</p>
+                      <p className='font-bold'>
+                        {format(
+                          new Date(booking.check_out),
+                          "dd 'de' MMMM 'de' yyyy",
+                          {
+                            locale: ptBR,
+                          }
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className='text-sm text-muted-foreground'>Hóspedes</p>
+                      <p className='font-bold'>{booking.number_of_guests}</p>
+                    </div>
+                  </div>
+                  <div className='mt-6 w-full'>
+                    <div className='flex flex-col md:flex-row md:items-end md:justify-between gap-3'>
+                      <div>
+                        <p className='text-sm text-muted-foreground'>
+                          Valor Total
+                        </p>
+                        <p className='font-bold text-primary text-xl'>
+                          R${' '}
+                          {(typeof booking.total_price === 'string'
+                            ? parseFloat(booking.total_price)
+                            : booking.total_price
+                          ).toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className='mt-6 w-full rounded-xl border border-primary/20 bg-card/40 p-6 shadow-ocean'>
+                      <p className='text-sm md:text-base font-semibold text-muted-foreground tracking-wide'>
+                        Price details
+                      </p>
+                      <div className='mt-3 space-y-2'>
+                        <div className='flex items-center justify-between'>
+                          <span className='text-sm md:text-base'>
+                            15 nights x R$6,241.76
+                          </span>
+                          <span className='text-sm md:text-base font-medium'>
+                            R$93,626.40
+                          </span>
+                        </div>
+                        <div className='flex items-center justify-between'>
+                          <span className='text-sm md:text-base'>
+                            Weekly stay discount
+                          </span>
+                          <span className='text-sm md:text-base font-medium text-green-600'>
+                            -R$2,430.00
+                          </span>
+                        </div>
+                        <div className='border-t border-primary/20 my-3' />
+                        <div className='flex items-center justify-between'>
+                          <span className='text-sm md:text-base font-semibold'>
+                            Total (BRL)
+                          </span>
+                          <span className='text-lg md:text-xl font-bold'>
+                            R$91,196.40
+                          </span>
+                        </div>
+                        <Button
+                          onClick={handlePay}
+                          className='w-full shadow-ocean mx-auto'
+                          variant='gradient'
+                        >
+                          Processar Pagamento
+                        </Button>
+                      </div>
+                      <p className='mt-3 text-xs md:text-sm text-muted-foreground'>
+                        Price breakdown
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="glass-ocean border-primary/20">
+          <Card className='glass-ocean border-primary/20'>
             <CardHeader>
               <CardTitle>Mensagens</CardTitle>
-              <CardDescription>Entre em contato conosco sobre sua reserva</CardDescription>
+              <CardDescription>
+                Entre em contato conosco sobre sua reserva
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4 mb-4 max-h-96 overflow-y-auto">
+              <div className='space-y-4 mb-4 max-h-96 overflow-y-auto'>
                 {messages.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    Nenhuma mensagem ainda. Envie uma mensagem se tiver alguma dúvida!
+                  <p className='text-center text-muted-foreground py-8'>
+                    Nenhuma mensagem ainda. Envie uma mensagem se tiver alguma
+                    dúvida!
                   </p>
                 ) : (
                   messages.map((msg) => (
                     <div
                       key={msg.id}
                       className={`p-4 rounded-lg ${
-                        msg.is_from_owner ? "bg-primary/10" : "bg-accent/10"
+                        msg.is_from_owner ? 'bg-primary/10' : 'bg-accent/10'
                       }`}
                     >
-                      <p className="font-bold text-sm mb-1">
-                        {msg.is_from_owner ? "Proprietário" : "Você"}
+                      <p className='font-bold text-sm mb-1'>
+                        {msg.is_from_owner ? 'Proprietário' : 'Você'}
                       </p>
                       <p>{msg.message}</p>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {format(new Date(msg.created_at), "dd/MM/yyyy 'às' HH:mm", {
-                          locale: ptBR,
-                        })}
+                      <p className='text-xs text-muted-foreground mt-2'>
+                        {format(
+                          new Date(msg.created_at),
+                          "dd/MM/yyyy 'às' HH:mm",
+                          {
+                            locale: ptBR,
+                          }
+                        )}
                       </p>
                     </div>
                   ))
                 )}
               </div>
 
-              <div className="flex gap-2">
+              <div className='flex gap-2'>
                 <Textarea
-                  placeholder="Digite sua mensagem..."
+                  placeholder='Digite sua mensagem...'
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   rows={3}
                 />
-                <Button onClick={sendMessage} className="bg-gradient-ocean">
-                  <Send className="h-4 w-4" />
+                <Button onClick={sendMessage} className='bg-gradient-ocean'>
+                  <Send className='h-4 w-4' />
                 </Button>
               </div>
             </CardContent>
