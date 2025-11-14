@@ -6,11 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { parse, eachDayOfInterval, format } from "date-fns";
-
-interface DateRange {
-  from: Date;
-  to: Date;
-}
+import type { DateRange, SelectRangeEventHandler } from "react-day-picker";
 
 function parseICS(icsText: string): DateRange[] {
   const lines = icsText.split(/\r?\n/);
@@ -138,6 +134,10 @@ export function ICSCalendarPreview() {
     setNoteDraft("");
   };
 
+  const handleRangeSelect: SelectRangeEventHandler = (range) => {
+    setSelected(range);
+  };
+
   return (
     <Card className="glass-ocean border-primary/20 mb-8 min-h-[60vh]">
       <CardHeader>
@@ -189,7 +189,7 @@ export function ICSCalendarPreview() {
               numberOfMonths={months}
               mode="range"
               selected={selected}
-              onSelect={setSelected}
+              onSelect={handleRangeSelect}
               modifiers={{ unavailable: unavailableDates, noted: notedDates }}
               modifiersClassNames={{
                 unavailable: "bg-destructive/30 text-destructive-foreground",
@@ -207,9 +207,9 @@ export function ICSCalendarPreview() {
           </div>
 
           <div className="w-full min-w-0">
-            <Card className="bg-background/50 border-gradient-ocean lg:sticky lg:top-24">
+            <Card className="bg-background/50 border-gradient-ocean rounded-2xl lg:sticky lg:top-24">
               <CardHeader>
-                <CardTitle>Regras do período</CardTitle>
+                <CardTitle>Gerenciar Período</CardTitle>
                 <CardDescription>
                   Selecione um intervalo e aplique as regras
                 </CardDescription>

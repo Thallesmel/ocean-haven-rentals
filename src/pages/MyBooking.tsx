@@ -1,5 +1,5 @@
 import { Navigation } from "@/components/Navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,24 +13,33 @@ import { Send } from "lucide-react";
 
 export default function MyBooking() {
   const navigate = useNavigate();
-  const [booking, setBooking] = useState<any>(null);
-  const [messages, setMessages] = useState<any[]>([]);
+  type Booking = {
+    id: string;
+    status: "pending" | "confirmed" | "cancelled" | "completed";
+    check_in: string;
+    check_out: string;
+    number_of_guests: number;
+    total_price: number | string;
+  };
+  type Message = {
+    id: string;
+    booking_id: string;
+    sender_id: string | null;
+    message: string;
+    is_from_owner: boolean;
+    created_at: string;
+  };
+  const [booking, setBooking] = useState<Booking | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadBookingAndMessages();
-  }, []);
-
-  const loadBookingAndMessages = async () => {
+  const loadBookingAndMessages = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    
     if (!user) {
       navigate("/auth");
       return;
     }
-
-    // Load most recent booking
     const { data: bookingData } = await supabase
       .from("bookings")
       .select("*")
@@ -38,13 +47,18 @@ export default function MyBooking() {
       .order("created_at", { ascending: false })
       .limit(1)
       .single();
-
     if (bookingData) {
-      setBooking(bookingData);
+      setBooking(bookingData as Booking);
       loadMessages(bookingData.id);
     }
     setLoading(false);
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    loadBookingAndMessages();
+  }, [loadBookingAndMessages]);
+
+  
 
   const loadMessages = async (bookingId: string) => {
     const { data } = await supabase
@@ -77,14 +91,14 @@ export default function MyBooking() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants: any = {
+  const getStatusBadge = (status: Booking["status"]) => {
+    const variants: Record<Booking["status"], "secondary" | "default" | "destructive" | "outline"> = {
       pending: "secondary",
       confirmed: "default",
       cancelled: "destructive",
       completed: "outline",
     };
-    const labels: any = {
+    const labels: Record<Booking["status"], string> = {
       pending: "Pendente",
       confirmed: "Confirmada",
       cancelled: "Cancelada",
@@ -162,7 +176,11 @@ export default function MyBooking() {
                 <div>
                   <p className="text-sm text-muted-foreground">Valor Total</p>
                   <p className="font-bold text-primary text-xl">
-                    R$ {parseFloat(booking.total_price).toFixed(2)}
+                    R$ {(
+                      typeof booking.total_price === "string"
+                        ? parseFloat(booking.total_price)
+                        : booking.total_price
+                    ).toFixed(2)}
                   </p>
                 </div>
               </div>

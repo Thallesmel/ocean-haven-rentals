@@ -32,7 +32,7 @@ const groupImagesByFolder = (): Record<string, string[]> => {
     if (match) {
       const folder = match[1];
       if (!grouped[folder]) grouped[folder] = [];
-      // @ts-ignore
+      // @ts-expect-error: Vite ESM glob generates modules with a default export
       grouped[folder].push(imageImports[path].default);
     }
   });

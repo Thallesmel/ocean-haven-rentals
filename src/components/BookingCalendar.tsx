@@ -89,13 +89,13 @@ export const BookingCalendar = () => {
           Reserve Sua Estadia
         </h2>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-          <Card className="glass-ocean border-primary/20">
+        <div className="grid md:grid-cols-[70%_30%] gap-8 w-full mx-auto">
+          <Card className="glass-ocean border-primary/20 h-full">
             <CardHeader>
               <CardTitle>Selecione as Datas</CardTitle>
               <CardDescription>Escolha check-in e check-out</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4">
               <Calendar
                 mode="range"
                 selected={{ from: checkIn, to: checkOut }}
@@ -104,12 +104,22 @@ export const BookingCalendar = () => {
                   setCheckOut(range?.to);
                 }}
                 disabled={(date) => date < new Date()}
-                className="rounded-md border-primary/20 pointer-events-auto"
+                showOutsideDays
+                numberOfMonths={2}
+                className="w-full"
+                classNames={{
+                  months: "grid grid-cols-1 md:grid-cols-2 gap-4 w-full",
+                  month: "space-y-4",
+                  caption_label: "text-base md:text-lg font-semibold",
+                  head_cell: "text-muted-foreground rounded-md w-9 sm:w-10 md:w-12 font-normal text-[0.8rem]",
+                  cell: "h-9 w-9 sm:h-10 sm:w-10 md:h-12 md:w-12 text-center text-sm p-0 relative",
+                  day: "h-9 w-9 sm:h-10 sm:w-10 md:h-12 md:w-12 p-0 font-normal",
+                }}
               />
             </CardContent>
           </Card>
 
-          <Card className="glass-ocean border-primary/20">
+          <Card className="glass-ocean border-primary/20 w-full mt-6 md:mt-0">
             <CardHeader>
               <CardTitle>Informações do Hóspede</CardTitle>
               <CardDescription>Preencha seus dados</CardDescription>
@@ -179,7 +189,7 @@ export const BookingCalendar = () => {
                 onClick={handleBooking}
                 disabled={loading || !checkIn || !checkOut || !guestName || !guestEmail}
                 className="w-full"
-                variant="ghost"
+                variant="gradient"
               >
                 {loading ? "Processando..." : "Confirmar Reserva"}
               </Button>
